@@ -1,0 +1,95 @@
+package com.poc.frontend.backingbean;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.annotation.PostConstruct;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
+
+import com.poc.frontend.dto.UserDto;
+import com.poc.frontend.facade.TestUserFacade;
+
+import base.backingbean.BaseBackingBean;
+import base.utils.ExceptionUtil;
+
+@Component("bkTestUser")
+@Scope("view")
+public class BKTestUser extends BaseBackingBean {
+	private static final long serialVersionUID = 1L;
+	private static final Logger log = LogManager.getLogger(BKTestUser.class);
+	@Autowired
+	private TestUserFacade testUserFacade;
+	private List<UserDto> userList = new ArrayList<UserDto>();
+	private UserDto userDto = new UserDto();
+	private boolean showModal;
+
+	@PostConstruct
+	public void postConstruct() {
+		log.debug("postConstruct");
+		try {
+			testUserFacade.initial(this);
+		} catch (Exception ex) {
+			ExceptionUtil.addMessage(ex);
+		}
+	}
+
+	public void action_openUserModal() {
+		log.debug("action_openUserModal");
+		try {
+			userDto = new UserDto();
+			showModal = true;
+		} catch (Exception ex) {
+			ExceptionUtil.addMessage(ex);
+		}
+	}
+
+	public void action_closeUserModal() {
+		log.debug("action_closeUserModal");
+		try {
+			showModal = false;
+		} catch (Exception ex) {
+			ExceptionUtil.addMessage(ex);
+		}
+	}
+
+	public void action_saveNewUser() {
+		log.debug("action_saveNewUser");
+		try {
+			testUserFacade.saveNewUser(this);
+			testUserFacade.findAllUser(this);
+			showModal = false;
+		} catch (Exception ex) {
+			ExceptionUtil.addMessage(ex);
+		}
+	}
+
+	public UserDto getUserDto() {
+		return userDto;
+	}
+
+	public void setUserDto(UserDto userDto) {
+		this.userDto = userDto;
+	}
+
+	public boolean isShowModal() {
+		return showModal;
+	}
+
+	public void setShowModal(boolean showModal) {
+		this.showModal = showModal;
+	}
+
+	public List<UserDto> getUserList() {
+		return userList;
+	}
+
+	public void setUserList(List<UserDto> userList) {
+		this.userList = userList;
+	}
+
+}

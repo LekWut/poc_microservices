@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://xmlns.jcp.org/jsf/html" xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:jsf="http://xmlns.jcp.org/jsf" xmlns:pt="http://xmlns.jcp.org/jsf/passthrough"
+	xmlns:composite="http://xmlns.jcp.org/jsf/composite" xmlns:mj="http://mojarra.dev.java.net/mojarra_ext"
+	xmlns:p="http://primefaces.org/ui" xmlns:pe="http://primefaces.org/ui/extensions">
+
+	<ui:composition template="/WEB-INF/templates/template.xhtml">
+		<ui:define name="innerHeadTag">
+			<title>test.xhtml</title>
+			<script
+				src="#{facesContext.externalContext.requestContextPath}/web-resources/javascript/monthpicker/jquery.monthpicker.min.js"
+				type="text/javascript" />
+			<script type="text/javascript">
+			$(document).ready(function() {
+				$('.jQueryMonthpicker').monthpicker();
+				$('#jQueryMonthpicker').monthpicker({
+					'lang' : 'es'
+				});
+				$('.jQueryMonthYearPicker').datepicker({
+					changeMonth : true,
+					changeYear : true,
+					showButtonPanel : true,
+					dateFormat : 'MM yy'
+				}).focus(function() {
+					var thisCalendar = $(this);
+					$('.ui-datepicker-calendar').detach();
+					//$('.ui-datepicker-calendar').css( "display", "none" );
+					$('.ui-datepicker-close').click(function() {
+						var month = $("#ui-datepicker-div .ui-datepicker-month :selected").val();
+						var year = $("#ui-datepicker-div .ui-datepicker-year :selected").val();
+						$('.ui-datepicker-calendar').css( "display", "none" );
+						thisCalendar.datepicker('setDate', new Date(year, month, 1));
+					});
+				});
+			});
+			</script>
+			<style type="text/css">
+/*
+.ui-datepicker-calendar {
+	display: none;
+}
+*/
+</style>
+		</ui:define>
+		<ui:define name="contentSection">
+			<p:tabView id="tabViewID">
+				<p:tab title="ทดสอบ View">
+					<h:form id="testFormTab1">
+						<h:panelGrid>
+							<p:keyboard id="qwerty" value="#{bkTest.count}" keypadOnly="true" required="true" />
+							<input type="range" min="0" max="999999" jsf:id="range" jsf:value="#{bkTest.count}" />
+							<h:commandButton value="Ajax Count +1">
+								<f:ajax listener="#{bkTest.action_count()}" execute="range" render="testFormTab1"></f:ajax>
+							</h:commandButton>
+							<button jsf:action="#{bkTest.action_count()}" onclick="showLoading();">Post Count +1</button>
+							<h:commandButton value="Test message" onclick="showLoading();">
+								<f:ajax listener="#{bkTest.action_test()}" render="testFormTab1"></f:ajax>
+							</h:commandButton>
+							
+							<h:commandLink ></h:commandLink>
+						</h:panelGrid>
+						
+						<h:panelGrid style="margin-top:10px;">
+							<p:commandButton value="Edit" icon="fa fa-spinner"/>
+							<p:commandButton value="Edit" icon="fa fa-fw fa-edit" type="button"/>
+							<p:commandButton  value="Capture" icon="fa fa-camera-retro"/>
+							<p:commandButton value="Edit" icon="fa fa-edit" type="button"/>
+							<p:button icon="fa fa-bug"/>
+							
+							
+							<p:commandLink id="commandLinkWithInnerSpan">
+					            <span class="fa-stack fa-lg">
+					                <i class="fa fa-square-o fa-stack-2x"></i> 
+					                <i class="fa fa-flag fa-stack-1x"></i>
+					            </span>
+					         </p:commandLink>
+					         
+					         <p:commandLink title="#{dcaLabel['center.download']}">
+					            <span class="fa-stack fa-lg">
+					                <i class="fa fa-square-o fa-stack-2x"></i> 
+					                <i class="fa fa-download fa-stack-1x"></i>
+					            </span>
+					         </p:commandLink>
+					         
+					         <p:commandLink title="#{dcaLabel['center.delete']}">
+					            <span class="fa-stack fa-lg">
+					                <i class="fa fa-square-o fa-stack-2x"></i> 
+					                <i class="fa fa-trash fa-stack-1x"></i>
+					            </span>
+					         </p:commandLink>
+						</h:panelGrid>
+						
+						
+						<h:panelGrid id="pg1">
+							<p:inputText value="#{bkTest.test}"></p:inputText>
+						</h:panelGrid>
+						
+						<h:panelGrid id="pg2">
+						<!--  
+							<p:dataTable id="cars2" var="data" value="#{bkTest.testNames}" editable="true" editMode="cell" widgetVar="cellCars">
+						       <f:facet name="header">
+						           Cell Editing with Click and RightClick
+						       </f:facet>
+						 
+						       <p:ajax event="cellEdit" listener="#{bkTest.onCellEdit}" process="@this" disabled="true" delay="true"/>
+						 
+						       <p:column headerText="Id">
+						              <p:cellEditor>
+						                  <f:facet name="output"><h:outputText value="#{data.uuid}" /></f:facet>
+						                  <f:facet name="input"><p:inputText id="modelInput" value="#{data.uuid}" style="width:96%"/></f:facet>
+						              </p:cellEditor>
+						          </p:column>
+						 
+						          <p:column headerText="Year">
+						           <p:cellEditor>
+						               <f:facet name="output"><h:outputText value="#{data.firstName}" /></f:facet>
+						               <f:facet name="input"><p:inputText value="#{data.firstName}" style="width:96%" label="Year"/></f:facet>
+						           </p:cellEditor>
+						       </p:column>
+						     </p:dataTable>
+						     -->
+						</h:panelGrid>
+						
+ 
+						<p:commandButton value="Submit" action="#{bkTest.action_saveTest()}">
+							
+						</p:commandButton>
+						
+						<p:panelGrid style="margin-top:20px">
+						    <f:facet name="header">
+						        <p:row>
+						            <p:column colspan="7">1995-96 NBA Playoffs</p:column>
+						        </p:row>
+						        <p:row>
+						            <p:column colspan="2">Conf. Semifinals</p:column>
+						            <p:column colspan="2">Conf. Finals</p:column>
+						            <p:column colspan="2">NBA Finals</p:column>
+						            <p:column>Champion</p:column>
+						        </p:row>
+						 
+						    </f:facet>
+						 
+						    <p:row>
+						        <p:column style="font-weight: bold;">Seattle</p:column>
+						        <p:column style="font-weight: bold;">4</p:column>
+						 
+						        <p:column rowspan="2" style="font-weight: bold;">Seattle</p:column>
+						        <p:column rowspan="2" style="font-weight: bold;">4</p:column>
+						 
+						        <p:column rowspan="5">Seattle</p:column>
+						        <p:column rowspan="5">2</p:column>
+						 
+						        <p:column rowspan="11" style="font-weight: bold;">Chicago</p:column>
+						    </p:row>
+						 
+						    <p:row>
+						        <p:column>Houston</p:column>
+						        <p:column >0</p:column>
+						    </p:row>
+						 
+						    <p:row>
+						        <p:column colspan="4" styleClass="ui-widget-header">
+						            <p:spacer height="0"/>
+						        </p:column>
+						    </p:row>
+						 
+						    <p:row>
+						        <p:column style="font-weight: bold;">Utah</p:column>
+						        <p:column style="font-weight: bold;">4</p:column>
+						 
+						        <p:column rowspan="2">Utah</p:column>
+						        <p:column rowspan="2">3</p:column>
+						    </p:row>
+						 
+						    <p:row>
+						        <p:column>San Antonio</p:column>
+						        <p:column >2</p:column>
+						    </p:row>
+						 
+						    <p:row>
+						        <p:column colspan="6" styleClass="ui-widget-header">
+						            <p:spacer height="0"/>
+						        </p:column>
+						    </p:row>
+						 
+						    <p:row>
+						        <p:column style="font-weight: bold;">Chicago</p:column>
+						        <p:column style="font-weight: bold;">4</p:column>
+						 
+						        <p:column rowspan="2" style="font-weight: bold;">Chicago</p:column>
+						        <p:column rowspan="2" style="font-weight: bold;">4</p:column>
+						 
+						        <p:column rowspan="5" style="font-weight: bold;">Chicago</p:column>
+						        <p:column rowspan="5" style="font-weight: bold;">4</p:column>
+						    </p:row>
+						 
+						    <p:row>
+						        <p:column>New York</p:column>
+						        <p:column >1</p:column>
+						    </p:row>
+						 
+						    <p:row>
+						        <p:column colspan="4" styleClass="ui-widget-header">
+						            <p:spacer height="0"/>
+						        </p:column>
+						    </p:row>
+						 
+						    <p:row>
+						        <p:column>Atlanta</p:column>
+						        <p:column >1</p:column>
+						 
+						        <p:column rowspan="2">Orlando</p:column>
+						        <p:column rowspan="2">0</p:column>
+						    </p:row>
+						 
+						    <p:row>
+						        <p:column style="font-weight: bold;">Orlando</p:column>
+						        <p:column style="font-weight: bold;">4</p:column>
+						    </p:row>
+						 
+						 
+						    <f:facet name="footer">
+						        <p:row>
+						            <p:column  colspan="4" style="text-align: right">
+						                Finals MVP
+						            </p:column>
+						            <p:column  colspan="3" rowspan="3">
+						                Michael Jordan (Chicago)
+						            </p:column>
+						        </p:row>
+						 
+						        <p:row>
+						            <p:column  colspan="4" style="text-align: right">
+						                Season MVP
+						            </p:column>
+						        </p:row>
+						        <p:row>
+						            <p:column  colspan="4" style="text-align: right">
+						                Top Scorer
+						            </p:column>
+						        </p:row>
+						    </f:facet>
+						</p:panelGrid>
+					</h:form>
+				</p:tab>
+				<p:tab title="ทดสอบ Hibernate">
+					<h:form id="testFormTab2">
+						<h:panelGrid>
+							<p:inputText label="Text" value="#{bkTest.text}" required="true" placeholder="Text"></p:inputText>
+							<p:commandButton value="Ajax Submit" id="ajax" actionListener="#{bkTest.action_save()}"
+								styleClass="ui-priority-primary" onclick="showLoading();" />
+						</h:panelGrid>
+					</h:form>
+				</p:tab>
+				<p:tab title="ทดสอบ Schedule">
+					<h:form id="testFormTab3">
+						<h3 style="margin-top: 0">Editable Schedule</h3>
+						<style type="text/css">
+td.fc-day.fc-sat {
+	background-color: red;
+}
+
+.fc-day11 {
+	backgroundColor: green;
+}
+
+.myclass .fc-event, .myclass a, .myclass .fc-event-inner {
+	background-color: red;
+	border-color: red;
+	color: white;
+}
+
+.ui-state-highlight, .ui-widget-content .ui-state-highlight, .ui-widget-header .ui-state-highlight {
+	background: none !important;
+}
+</style>
+						<p:schedule id="schedule" value="#{bkTest.eventModel}" widgetVar="myschedule" style="width:300px;"
+							showHeader="false">
+							<!-- 							<p:ajax event="dateSelect" listener="#{scheduleView.onDateSelect}" update="eventDetails" oncomplete="PF('eventDialog').show();" /> -->
+							<!-- 							<p:ajax event="eventSelect" listener="#{scheduleView.onEventSelect}" update="eventDetails" oncomplete="PF('eventDialog').show();" /> -->
+							<!-- 							<p:ajax event="eventMove" listener="#{scheduleView.onEventMove}" update="messages" /> -->
+							<!-- 							<p:ajax event="eventResize" listener="#{scheduleView.onEventResize}" update="messages" /> -->
+						</p:schedule>
+						<script type="text/javascript">
+							$(".fc-day-number").css("backgroundColor","green");
+						</script>
+					</h:form>
+				</p:tab>
+				<p:tab title="ทดสอบ Print">
+					<h:form id="testFormTab4">
+						<h:panelGrid>
+							<p:commandButton ajax="false" value="Print" id="printReport" action="#{bkTest.action_print()}"
+								styleClass="ui-priority-primary" />
+						</h:panelGrid>
+					</h:form>
+				</p:tab>
+				<p:tab title="ทดสอบ Calendar">
+					<h:form id="testFormTab5">
+						<h:panelGrid>
+							<p:calendar id="german" value="#{bkTest.birthDate}" navigator="true" pattern="yyyy-MM-dd" />
+							<p:commandButton value="Submit" action="#{bkTest.action_testCalendar()}" />
+							<p:commandButton value="Check Url" action="#{bkTest.action_checkUrl()}" />
+							<h:panelGroup>
+								<input type="text" class="jQueryMonthpicker" />
+							</h:panelGroup>
+							<h:panelGroup>
+								<input type="text" id="jQueryMonthpicker" />
+							</h:panelGroup>
+							<h:panelGroup>
+								<input type="text" class="jQueryMonthYearPicker" jsf:value="" />
+							</h:panelGroup>
+						</h:panelGrid>
+					</h:form>
+				</p:tab>
+				<p:tab title="ทดสอบ StreamedContent">
+					<h:form id="testFormTab6">
+						<p:graphicImage value="#{bkServeImage.blobImage}" cache="false" width="20" height="20">
+							<f:param name="blobUuid" value="blob001"></f:param>
+						</p:graphicImage>
+						<p:graphicImage value="#{bkTest.blobImage}" cache="false" stream="false">
+						</p:graphicImage>
+						<p:commandButton value="Download" ajax="false" icon="ui-icon-arrowthick-1-s">
+							<p:fileDownload value="#{bkServeImage.getBlobImage()}">
+							</p:fileDownload>
+							<f:param name="blobUuid" value="blob001"></f:param>
+						</p:commandButton>
+						<p:commandButton value="refesh" update="@form" action="#{bkTest.action_genImage}"></p:commandButton>
+						<br />
+						<p:graphicImage value="#{bkTest.fileUrl}" cache="false" width="20" height="20" />
+						<p:commandButton value="FileServlet Url" action="#{bkTest.action_testFileServlet()}" update="@form" />
+						<p:link id="downloadPDF" value="Download PDF" href="#{bkTest.fileUrl}" target="_blank"/>
+					</h:form>
+				</p:tab>
+			</p:tabView>
+		</ui:define>
+	</ui:composition>
+</html>
+

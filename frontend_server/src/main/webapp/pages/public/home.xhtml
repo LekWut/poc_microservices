@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:f="http://xmlns.jcp.org/jsf/core" xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets" xmlns:jsf="http://xmlns.jcp.org/jsf" xmlns:pt="http://xmlns.jcp.org/jsf/passthrough"
+	xmlns:composite="http://xmlns.jcp.org/jsf/composite" xmlns:mj="http://mojarra.dev.java.net/mojarra_ext"
+	xmlns:p="http://primefaces.org/ui">
+
+<f:view transient="true">
+	<ui:composition template="/WEB-INF/templates/baseTemplate.xhtml">
+		<ui:define name="innerHeadTagSectionBaseTemplate">
+			<title>Home</title>
+		</ui:define>
+		<ui:define name="innerBodyTagSectionBaseTemplate">
+			<p:panel id="basic" header="Home Page" style="width:900px;margin:20px auto;">
+				<h:form id="homeForm">
+					<h:panelGrid>
+						<p:link value="/pages/public/login.xhtml" href="/pages/public/login.xhtml" />
+						<p:link value="/pages/public/test/securityTesting.xhtml" href="/pages/public/test/securityTesting.xhtml" />
+						<p:link value="Download PDF" href="pages/public/calendar.pdf" target="_blank"/>
+						<p:link value="/pages/public/test/test.xhtml" href="/pages/public/test/test.xhtml" />
+						
+					</h:panelGrid>
+				</h:form>
+			</p:panel>
+		</ui:define>
+	</ui:composition>
+</f:view>
+</html>
+

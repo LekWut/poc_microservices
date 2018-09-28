@@ -1,0 +1,39 @@
+package base.spring.security;
+
+import java.util.Collection;
+//import java.util.List;
+
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+
+import base.test.domain.TestUser;
+//import caat.stat.auth.domain.AuthMRoleMenu;
+
+public class AppUser extends User {
+
+	private TestUser authMUser;
+//	private List<AuthMRoleMenu> authMRoleMenuList;
+
+	public AppUser(String username, String password, boolean enabled, boolean accountNonExpired,
+			boolean credentialsNonExpired, boolean accountNonLocked,
+			Collection<? extends GrantedAuthority> authorities) {
+		super(username, password, enabled, accountNonExpired, credentialsNonExpired, accountNonLocked, authorities);
+	}
+
+	public TestUser getAuthMUser() {
+		return authMUser;
+	}
+
+	public void setAuthMUser(TestUser authMUser) {
+		this.authMUser = authMUser;
+	}
+
+//	public List<AuthMRoleMenu> getAuthMRoleMenuList() {
+//		return authMRoleMenuList;
+//	}
+
+//	public void setAuthMRoleMenuList(List<AuthMRoleMenu> authMRoleMenuList) {
+//		this.authMRoleMenuList = authMRoleMenuList;
+//	}
+
+}

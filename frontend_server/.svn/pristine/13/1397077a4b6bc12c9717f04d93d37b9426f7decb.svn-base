@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" 
+	xmlns:f="http://xmlns.jcp.org/jsf/core" 
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets" 
+	xmlns:jsf="http://xmlns.jcp.org/jsf" 
+	xmlns:pt="http://xmlns.jcp.org/jsf/passthrough"
+	xmlns:composite="http://xmlns.jcp.org/jsf/composite" 
+	xmlns:mj="http://mojarra.dev.java.net/mojarra_ext"
+	xmlns:p="http://primefaces.org/ui">
+
+<ui:composition template="/WEB-INF/templates/template.xhtml">
+	<ui:define name="innerHeadTag">
+		<title>testSuspension.xhtml</title>
+		<style type="text/css">
+</style>
+	</ui:define>
+	<ui:define name="contentSection">
+		<h:form id="cgForm">
+			<h:panelGrid columns="2" style="margin: auto;" rendered="#{!bkTestCheckgrade.stdRole}">
+				<h:outputLabel for="studentCode" value="Student Code:" />
+				<p:inputText id="studentCode" value="#{bkTestCheckgrade.studentCode}" />
+				<h:panelGroup />
+				<h:panelGroup>
+					<p:commandButton action="#{bkTestCheckgrade.action_checkgrade}" 
+									 value="Check" update="@form" />
+				    <p:commandButton action="#{bkTestCheckgrade.action_clear}" 
+									 value="Clear" update="@form" />
+				</h:panelGroup>
+			</h:panelGrid>
+			<h:panelGrid columns="1" style="width:80%;margin:0 auto;"
+						 rendered="#{bkTestCheckgrade.checkgradeList.size()>0}">
+				<h:outputLabel value="ผลการเรียน" style="font-weight:bold; font-size:18px; text-align:center;" />
+				<p:dataTable var="cg" 
+							 value="#{bkTestCheckgrade.checkgradeList}"
+							 rowKey="#{cg.id}">
+					<p:column headerText="Student Code">
+						<h:outputText value="#{cg.studentCode}" />
+					</p:column>
+					<p:column headerText="Student Name">
+						<h:outputText value="#{cg.studentName}" />
+					</p:column>
+					<p:column headerText="Acad Year">
+						<h:outputText value="#{cg.semesterId}/#{cg.acadYear}" />
+					</p:column>
+					<p:column headerText="Course Code">
+						<h:outputText value="#{cg.courseCode}" />
+					</p:column>
+					<p:column headerText="Course Name">
+						<h:outputText value="#{cg.courseName}" />
+					</p:column>
+					<p:column headerText="Grade">
+						<h:outputText value="#{cg.grade}" />
+					</p:column>
+				</p:dataTable>
+			</h:panelGrid>
+			<h:panelGrid columns="1" style="width:80%;margin:0 auto;"
+						 rendered="#{bkTestCheckgrade.suspensionList.size()>0}">
+				<h:outputLabel value="ไม่สามารถตรวจสอบผลการเรียนได้ เนื่องจาก" style="font-weight:bold; font-size:18px; text-align:center;" />
+				<p:dataTable var="sp" 
+							 value="#{bkTestCheckgrade.suspensionList}"
+							 rowKey="#{sp.id}">
+					<p:column headerText="Student Code">
+						<h:outputText value="#{sp.studentCode}" />
+					</p:column>
+					<p:column headerText="Student Name">
+						<h:outputText value="#{sp.studentName}" />
+					</p:column>
+					<p:column headerText="Suspension Remark">
+						<h:outputText value="#{sp.suspensionRemark}" />
+					</p:column>
+					<p:column headerText="Suspension Date">
+						<h:outputText value="#{sp.suspensionDate}">
+							<f:convertDateTime pattern="dd/MM/yyyy"/>
+						</h:outputText>
+					</p:column>
+				</p:dataTable>
+			</h:panelGrid>
+		</h:form>
+		
+	</ui:define>
+</ui:composition>
+</html>
+

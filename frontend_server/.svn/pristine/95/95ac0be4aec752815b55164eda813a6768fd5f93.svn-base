@@ -1,0 +1,1215 @@
+package base.utils;
+
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.math.BigDecimal;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.sql.Blob;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.Map;
+import java.util.ResourceBundle;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.faces.application.FacesMessage;
+import javax.faces.context.FacesContext;
+import javax.servlet.ServletContext;
+
+import org.apache.commons.validator.routines.EmailValidator;
+import org.apache.commons.validator.routines.UrlValidator;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.primefaces.json.JSONObject;
+import org.springframework.context.ApplicationContext;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.web.context.support.WebApplicationContextUtils;
+
+import base.backingbean.BKSessionBean;
+import base.spring.security.AppUser;
+
+public class AppUtil {
+	private static final Logger log = LogManager.getLogger(AppUtil.class);
+	private static final String[] resourceBundleList = { "base.resources.appMessage" };
+
+	public static boolean isBlankOrNull(String value) {
+		if (value == null || value.trim().length() == 0) {
+			return true;
+		}
+		return false;
+	}
+
+	public static boolean isValidEmailAddress(String email) {
+		return EmailValidator.getInstance().isValid(email);
+	}
+	
+	public static boolean isValidHttpUrl(String httpUrl) {
+		String[] schemes = { "http", "https" };
+		UrlValidator urlValidator = new UrlValidator(schemes);
+		return urlValidator.isValid(httpUrl);
+	}
+
+	public static String getAppMessageByKey(String key) {
+		ResourceBundle resourceBundle = JSFUtil.getLocalMessageBundleByFileName("base.resources.appMessage");
+		return resourceBundle.getString(key);
+	}
+
+	public static String getAppLabelByKey(String key) {
+		ResourceBundle resourceBundle = JSFUtil.getLocalMessageBundleByFileName("base.resources.appLabel");
+		return resourceBundle.getString(key);
+	}
+
+	public static String getAppConfigByKey(String key) {
+		ResourceBundle resourceBundle = ResourceBundle.getBundle("applicationConfig");
+		return resourceBundle.getString(key).trim();
+	}
+	
+	public static String getConstantVariablesByKey(String key) {
+		ResourceBundle resourceBundle = ResourceBundle.getBundle("constantVariables");
+		return resourceBundle.getString(key).trim();
+	}
+
+	public static void addInfoMessage(String msgCode) {
+		addMessage(msgCode, new String[] { "" }, "1");
+	}
+
+	public static void addInfoMessage(String msgCode, String[] msgParams) {
+		addMessage(msgCode, msgParams, "1");
+	}
+
+	public static void addErrorMessage(String msgCode) {
+		addMessage(msgCode, new String[] { "" }, "2");
+	}
+
+	public static void addErrorMessage(String msgCode, String[] msgParams) {
+		addMessage(msgCode, msgParams, "2");
+	}
+
+	public static void addMessage(String msgCode, String[] msgParams, String type) {
+		if (type.equals("1")) {
+			JSFUtil.addFacesInfoMessage(getPreparedMessage(msgCode, msgParams));
+		} else if (type.equals("2")) {
+			JSFUtil.addFacesErrorMessage(getPreparedMessage(msgCode, msgParams));
+		}
+	}
+	
+	public static void addMessageForComponent(String componentId, String msgCode, String[] msgParams, String type) {
+		if (type.equals("1")) {
+			JSFUtil.addFacesInfoMessageForComponent(componentId, getPreparedMessage(msgCode, msgParams));
+		} else if (type.equals("2")) {
+			JSFUtil.addFacesErrorMessageForComponent(componentId, getPreparedMessage(msgCode, msgParams));
+		}
+	}
+
+	public static String getPreparedMessage(String msgCode) {
+		return getPreparedMessage(msgCode, new String[] { "" });
+	}
+
+	public static String getPreparedMessage(String msgCode, String msgParam) {
+		return getPreparedMessage(msgCode, new String[] { msgParam });
+	}
+
+	public static String getPreparedMessage(String msgCode, String[] msgParams) {
+		String dispMsg = "";
+		try {
+			dispMsg = getFirstFromAllMsgByKey(msgCode);
+		} catch (Exception e) {
+			dispMsg = "" + msgCode;
+		}
+		if (isBlankOrNull(dispMsg)) {
+			dispMsg = "" + msgCode;
+		}
+		for (int index = 0; index < msgParams.length; index++) {
+			String value = msgParams[index];
+			if (value == null)
+				value = "";
+			dispMsg = dispMsg.replace("{" + index + "}", value);
+		}
+		return dispMsg;
+	}
+
+	public static String getFirstFromAllMsgByKey(String key) {
+		String message = "";
+		for (int i = 0; i < resourceBundleList.length; i++) {
+			try {
+				ResourceBundle resourceBundle = JSFUtil.getLocalMessageBundleByFileName(resourceBundleList[i]);
+				message = resourceBundle.getString(key);
+			} catch (Exception ex) {
+				// ex.printStackTrace();
+				message = "";
+			}
+			// เอา file แรกที่เจอ key
+			if (!isBlankOrNull(message)) {
+				break;
+			}
+		}
+		return message;
+	}
+
+	public static Object getSpringBean(String beanId) {
+		// ApplicationContext ctx =
+		// WebApplicationContextUtils.getWebApplicationContext(((HttpServletRequest)
+		// FacesContext.getCurrentInstance().getExternalContext().getRequest()).getServletContext());
+		ApplicationContext ctx = WebApplicationContextUtils.getWebApplicationContext((ServletContext) FacesContext
+				.getCurrentInstance().getExternalContext().getContext());
+		return ctx.getBean(beanId);
+		// return null;
+	}
+
+	public static boolean isAuthenticated() {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		if (authentication != null && !(authentication instanceof AnonymousAuthenticationToken)) {
+			return authentication.isAuthenticated();
+		}
+		return false;
+	}
+
+	public static AppUser getCurrentUser() {
+		if (AppUtil.isAuthenticated()) {
+			Object userObj = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+			if (userObj instanceof AppUser) {
+				return (AppUser) userObj;
+			} else if (userObj instanceof User) {
+				User user = (User) userObj;
+				AppUser appUser = new AppUser(user.getUsername(), "-", true, true, true, true, user.getAuthorities());
+				return appUser;
+			}
+		}
+		return null;
+//		return new CaatUser("sysadmin", "-", true, true, true, true, new ArrayList<GrantedAuthority>(0));
+	}
+
+	public static Object getViewScopeBean(String bkBeanName) {
+		if (FacesContext.getCurrentInstance() != null && !FacesContext.getCurrentInstance().getViewRoot().isTransient()) {
+			Map<String, Object> viewMap = FacesContext.getCurrentInstance().getViewRoot().getViewMap();
+			return viewMap.get(bkBeanName);
+		}
+		return null;
+	}
+
+	/**
+	 * @param managedBeanName
+	 *            ชื่อของ Managed Bean ที่ต้องการ
+	 * @param managedBeanClass
+	 *            class ของ Managed Bean
+	 * @return instance ของ Managed Bean Class ที่ส่งเข้ามาโดยถ้ายังไม่มีจะ
+	 *         instantiate ให้
+	 */
+	public static <T> T getManagedBean(String managedBeanName, Class<T> managedBeanClass) {
+		FacesContext context = FacesContext.getCurrentInstance();
+		return managedBeanClass.cast(context.getApplication().evaluateExpressionGet(context,
+				"#{" + managedBeanName + "}", managedBeanClass));
+	}
+
+	public static boolean pidCheckDigit(String id) {
+		System.out.print(" >>> id : " + id);
+		if (id.length() != 13) {
+			return false;
+		}
+		System.out.print(" >>> id > 13 ");
+		String fp = "";
+		String sp = id;
+		int ldg = Integer.parseInt(sp.substring(12));
+		int sum = 0;
+		int mult = 0;
+		for (int i = 0; i < 12; i++) {
+			fp = sp.substring(0, 1);
+			sp = sp.substring(1);
+			mult = Integer.parseInt(fp) * (13 - i);
+			sum = sum + mult;
+			// System.out.println(i + " " + fp + " " + mult + " " + sum);
+		}
+		int chkdg = 11 - (sum % 11);
+		System.out.println("chkdg::" + chkdg + "::ldg::" + ldg);
+		if (chkdg > 9)
+			chkdg = chkdg - 10;
+
+		if (chkdg == ldg)
+			return true;
+		else
+			return false;
+	}
+
+	public static Date removeTimeFromDate(Date date) throws Exception {
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yyyy");
+		String dateStr = simpleDateFormat.format(date);
+		return simpleDateFormat.parse(dateStr);
+	}
+
+	public static boolean isWeekend(Date date) {
+		Calendar calendar = Calendar.getInstance();
+		calendar.setTime(date);
+		if (calendar.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY
+				|| calendar.get(Calendar.DAY_OF_WEEK) == Calendar.SATURDAY) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	public static String ifBlank(String inputData, String outputData) {
+
+		if (inputData == null || inputData.trim().equals(""))
+			return outputData;
+		else
+			return inputData;
+	}
+
+	public static boolean isThaiLocale() {
+		try {
+			Locale locale = FacesContext.getCurrentInstance().getViewRoot().getLocale();
+			if (locale.getLanguage().equalsIgnoreCase("th")) {
+				return true;
+			} else {
+				return false;
+			}
+		} catch (Exception ex) {
+			return true;
+		}
+	}
+
+	// ex. (+999,888-8888), idx = 0
+	// return +999
+	public static String getSplitPhoneNo(String phoneNo, int idx) {
+		if (AppUtil.ifBlank(phoneNo, "").trim().length() == 0)
+			return "";
+		String[] splitPhone = phoneNo.split(",");
+		if (idx >= splitPhone.length)
+			return "";
+		return splitPhone[idx];
+	}
+
+	// ex. (,888-8888)
+	// return false
+	public static boolean isValidPhoneNo(String phone) {
+		if (AppUtil.ifBlank(phone, "").trim().length() == 0)
+			return false;
+		String[] splitPhone = phone.split(",");
+		if (splitPhone.length != 2 || splitPhone[0].length() == 0 || splitPhone[1].length() == 0)
+			return false;
+		return true;
+	}
+
+	public static String cnvDateToStringBE(java.util.Date inputDate, String targetFormat) throws Exception {
+		targetFormat = targetFormat.toUpperCase();
+		String retDate = "";
+		String hh = "";
+		String mm = "";
+		String ss = "";
+		if (inputDate != null) {
+			java.util.Calendar calendarObj = java.util.Calendar.getInstance(Locale.ENGLISH);
+			calendarObj.setTime(inputDate);
+
+			int day = calendarObj.get(java.util.Calendar.DAY_OF_MONTH);
+			int month = calendarObj.get(java.util.Calendar.MONTH) + 1;
+			int year = calendarObj.get(java.util.Calendar.YEAR);
+			int hours = calendarObj.get(java.util.Calendar.HOUR_OF_DAY);
+			int minutes = calendarObj.get(java.util.Calendar.MINUTE);
+			int seconds = calendarObj.get(java.util.Calendar.SECOND);
+
+			// convert year to BE
+			year = year + 543;
+			/*
+			 * Debug.println(" day = " + day + " month = " + month + " year = "
+			 * + year + "\n" + " hours = " + hours + " minutes = " + minutes +
+			 * " seconds = "+ seconds);
+			 */
+
+			if (day < 10)
+				retDate = "0" + day;
+			else
+				retDate = (new Integer(day)).toString();
+
+			if (month < 10) {
+				if (targetFormat.equals("YYYYMMDD")) {
+					retDate = year + "0" + month + retDate;
+				}
+				if (targetFormat.equals("DD/MM/YYYY")) {
+					retDate = retDate + "/0" + month + "/" + year;
+				}
+				if (targetFormat.equals("YYYY/MM/DD")) {
+					retDate = year + "/0" + month + "/" + retDate;
+				}
+				if (targetFormat.equals("MM/DD/YYYY")) {
+					retDate = "/0" + month + "/" + retDate + "/" + year;
+				}
+				if (targetFormat.equals("DD/MM/YYYY HH24:MI:SS") || targetFormat.equals("DD/MM/YYYY HH:MM:SS")) {
+					if (hours < 10)
+						hh = "0" + Integer.toString(hours);
+					else
+						hh = Integer.toString(hours);
+					if (minutes < 10)
+						mm = "0" + Integer.toString(minutes);
+					else
+						mm = Integer.toString(minutes);
+					if (seconds < 10)
+						ss = "0" + Integer.toString(seconds);
+					else
+						ss = Integer.toString(seconds);
+
+					retDate = retDate + "/0" + month + "/" + year + " " + hh + ":" + mm + ":" + ss;
+				}
+				if (targetFormat.equals("DD/MM/YY HH24:MI")) {
+					if (hours < 10)
+						hh = "0" + Integer.toString(hours);
+					else
+						hh = Integer.toString(hours);
+					if (minutes < 10)
+						mm = "0" + Integer.toString(minutes);
+					else
+						mm = Integer.toString(minutes);
+					retDate = retDate + "/0" + month + "/" + String.valueOf(year).substring(2) + " " + hh + ":" + mm;
+				}
+			} else {
+				if (targetFormat.equals("YYYYMMDD")) {
+					retDate = year + "" + month + "" + retDate;
+				}
+				if (targetFormat.equals("DD/MM/YYYY")) {
+					retDate = retDate + "/" + month + "/" + year;
+				}
+
+				if (targetFormat.equals("YYYY/MM/DD")) {
+					retDate = year + "/" + month + "/" + retDate;
+				}
+				if (targetFormat.equals("MM/DD/YYYY")) {
+					retDate = month + "/" + retDate + "/" + year;
+				}
+				if (targetFormat.equals("DD/MM/YYYY HH24:MI:SS") || targetFormat.equals("DD/MM/YYYY HH:MM:SS")) {
+					if (hours < 10)
+						hh = "0" + Integer.toString(hours);
+					else
+						hh = Integer.toString(hours);
+					if (minutes < 10)
+						mm = "0" + Integer.toString(minutes);
+					else
+						mm = Integer.toString(minutes);
+					if (seconds < 10)
+						ss = "0" + Integer.toString(seconds);
+					else
+						ss = Integer.toString(seconds);
+
+					retDate = retDate + "/" + month + "/" + year + " " + hh + ":" + mm + ":" + ss;
+				}
+				if (targetFormat.equals("DD/MM/YY HH24:MI")) {
+					if (hours < 10)
+						hh = "0" + Integer.toString(hours);
+					else
+						hh = Integer.toString(hours);
+					if (minutes < 10)
+						mm = "0" + Integer.toString(minutes);
+					else
+						mm = Integer.toString(minutes);
+					retDate = retDate + "/" + month + "/" + String.valueOf(year).substring(2) + " " + hh + ":" + mm;
+				}
+
+			}
+		} else {
+			if (targetFormat.equals("DD/MM/YYYY")) {
+				retDate = "00/00/0000";
+			}
+			if (targetFormat.equals("YYYY/MM/DD")) {
+				retDate = "0000/00/00";
+			}
+			if (targetFormat.equals("DD/MM/YYYY HH24:MI:SS") || targetFormat.equals("DD/MM/YYYY HH:MM:SS")) {
+				retDate = "00/00/0000 00:00:00";
+			}
+		}
+		return retDate;
+	}
+
+	public static String dateStringBE2AD(String pDateValue, String pDateFormat) {
+		if ((pDateValue != null) && (pDateValue.length() > 0)) {
+			// Convert format content to upper case
+			pDateFormat = pDateFormat.trim().toUpperCase();
+
+			// Find each position of day, month and year of source format
+			int indSrcFirstD = pDateFormat.indexOf('D');
+			int indSrcLastD = pDateFormat.lastIndexOf('D');
+			int indSrcFirstM = pDateFormat.indexOf('M');
+			int indSrcLastM = pDateFormat.lastIndexOf('M');
+			int indSrcFirstY = pDateFormat.indexOf('Y');
+			int indSrcLastY = pDateFormat.lastIndexOf('Y');
+			int trgYearLength = indSrcLastY - indSrcFirstY;
+
+			// put data into target format
+			String sDD = pDateValue.substring(indSrcFirstD, indSrcLastD + 1);
+			String sMM = pDateValue.substring(indSrcFirstM, indSrcLastM + 1);
+			String sYY = pDateValue.substring(indSrcFirstY, indSrcLastY + 1);
+			int iYY = Integer.parseInt(sYY);
+			iYY = iYY - 543;
+			sYY = String.valueOf(iYY);
+
+			return buildNewFormat(sDD, sMM, sYY, pDateFormat, trgYearLength);
+		} else
+			return "";
+	}
+
+	private static String buildNewFormat(String pDD, String pMM, String pYY, String pFormat, int pYearLength) {
+
+		pFormat = pFormat.toUpperCase();
+		char cFormat[] = pFormat.toCharArray();
+		int i;
+		StringBuffer result = new StringBuffer();
+
+		for (i = 0; i < cFormat.length; i++) {
+			if (cFormat[i] == 'D') {
+				result.append(pDD);
+				i++;
+			} else if (cFormat[i] == 'M') {
+				result.append(pMM);
+				i++;
+			} else if (cFormat[i] == 'Y') {
+				result.append(pYY);
+				i = i + pYearLength;
+			} else
+				result.append(cFormat[i]);
+
+		}
+		return result.toString();
+
+	}
+
+	public static Integer findAge(Date birthDate) {
+		try {
+			Calendar now = Calendar.getInstance();
+			Calendar dob = Calendar.getInstance();
+			dob.setTime(birthDate);
+
+			int year1 = now.get(Calendar.YEAR);
+			int year2 = dob.get(Calendar.YEAR);
+			int age = year1 - year2;
+			int month1 = now.get(Calendar.MONTH);
+			int month2 = dob.get(Calendar.MONTH);
+			if (month2 > month1) {
+				age--;
+			} else if (month1 == month2) {
+				int day1 = now.get(Calendar.DAY_OF_MONTH);
+				int day2 = dob.get(Calendar.DAY_OF_MONTH);
+				if (day2 > day1) {
+					age--;
+				}
+			}
+
+			return age;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		return null;
+	}
+
+//	public static BKViewBean getViewBean() {
+//		Object viewBeanObj = DcaUtil.getViewScopeBean("bkViewBean");
+//		if (viewBeanObj != null) {
+//			return (BKViewBean) viewBeanObj;
+//		} else {
+//			return null;
+//		}
+//	}
+
+//	public static void setCurrentProgram(AuthMProgram program) {
+//		BKViewBean bkViewBean = DcaUtil.getViewBean();
+//		bkViewBean.setCurrentProgram(program);
+//	}
+
+//	public static AuthMProgram getCurrentProgram() {
+//		BKViewBean bkViewBean = DcaUtil.getViewBean();
+//		if (bkViewBean != null) {
+//			return bkViewBean.getCurrentProgram();
+//		} else {
+//			return null;
+//		}
+//	}
+
+	public static String numberFormat(long input, String format) {
+		String output = "";
+		output = (new DecimalFormat(format)).format(input);
+		return output;
+	}
+
+	public static String bigDecimalToStringFormat(BigDecimal bigDecimal, String format) {
+		DecimalFormat decimalFormat = new DecimalFormat(format);
+		return decimalFormat.format(bigDecimal);
+	}
+
+	public static void addRedirectInfoMessage(String redirectInfoMessage) {
+		Object sessionBeanObj = JSFUtil.getFromSession("bkSessionBean");
+		if (sessionBeanObj != null) {
+			BKSessionBean bkSessionBean = (BKSessionBean) sessionBeanObj;
+			bkSessionBean.setRedirectInfoMessageCode(redirectInfoMessage);
+		}
+	}
+
+	public static void addRedirectErrorMessage(String redirectErrorMessage) {
+		Object sessionBeanObj = JSFUtil.getFromSession("bkSessionBean");
+		if (sessionBeanObj != null) {
+			BKSessionBean bkSessionBean = (BKSessionBean) sessionBeanObj;
+			bkSessionBean.setRedirectErrorMessageCode(redirectErrorMessage);
+		}
+	}
+
+	public static String changeDateFormat(String pDateValue, String formatSource, String formatTarget) {
+		String result = null;
+		try {
+			// Convert format content to upper case
+			formatSource = formatSource.trim().toUpperCase();
+			formatTarget = formatTarget.trim().toUpperCase();
+
+			// Find each position of day, month and year of source format
+			int indSrcFirstD = formatSource.indexOf('D');
+			int indSrcLastD = formatSource.lastIndexOf('D');
+			int indSrcFirstM = formatSource.indexOf('M');
+			int indSrcLastM = formatSource.lastIndexOf('M');
+			int indSrcFirstY = formatSource.indexOf('Y');
+			int indSrcLastY = formatSource.lastIndexOf('Y');
+
+			// determine target year length; 2 or 4 digits
+			int indTrgLastY = formatTarget.lastIndexOf('Y');
+			int indTrgFirstY = formatTarget.indexOf('Y');
+			int trgYearLength = indTrgLastY - indTrgFirstY;
+
+			// put data into target format
+			String sDD = pDateValue.substring(indSrcFirstD, indSrcLastD + 1);
+			String sMM = pDateValue.substring(indSrcFirstM, indSrcLastM + 1);
+			String sYY = pDateValue.substring(indSrcFirstY, indSrcLastY + 1);
+
+			// get result using internal private method
+			result = buildNewFormat(sDD, sMM, sYY, formatTarget, trgYearLength);
+
+		} catch (Exception ex) {
+			log.debug("changeDateFormat::Exception::" + ex.toString());
+		}
+		return result;
+	}
+
+	public static BigDecimal cnvStringToBigDecimal(String input, int scale) {
+		String outputStr = "0";
+		if ((input != null) && (input.length() > 0))
+			outputStr = replaceStrWithStr(input, ",", "");
+		BigDecimal result = new BigDecimal(outputStr);
+		return result.setScale(scale, BigDecimal.ROUND_FLOOR);
+	}
+
+	public static BigDecimal cnvStringToBigDecimalWithRoundingMode(String input, int scale, int roundingMode) {
+		String outputStr = "0";
+		if ((input != null) && (input.length() > 0))
+			outputStr = replaceStrWithStr(input, ",", "");
+		BigDecimal result = new BigDecimal(outputStr);
+		return result.setScale(scale, roundingMode);
+	}
+
+	public static String replaceStrWithStr(String inputData, String originalStr, String replaceStr) {
+
+		StringBuffer outputData = new StringBuffer();
+		if (inputData.length() > 0) {
+			while (inputData.length() > 0) {
+				int index = inputData.indexOf(originalStr);
+				if (index == -1)
+					return outputData.append(inputData).toString();
+				else {
+					outputData.append(inputData.substring(0, index));
+					outputData.append(replaceStr);
+				}
+				inputData = inputData.substring(index + originalStr.length());
+			}
+		}
+		return outputData.toString();
+	}
+
+	public static java.util.Date cnvStringToDate(String inpDate) throws Exception {
+		java.util.Date date = null;
+		boolean convert = false;
+		if (inpDate == null || inpDate.length() == 0 || inpDate.equals("null")) {
+			return date;
+		}
+		if ((inpDate != null) || (inpDate.length() >= 10)) {
+			int ind1 = inpDate.indexOf('/');
+			int ind2 = inpDate.lastIndexOf('/');
+			if ((ind1 == 2) && (ind2 == 5))
+				convert = true;
+		}
+		Calendar calendar = Calendar.getInstance(Locale.ENGLISH);
+		if (convert) {
+			int day = Integer.parseInt(inpDate.substring(0, 2));
+			int month = Integer.parseInt(inpDate.substring(3, 5));
+			int year = Integer.parseInt(inpDate.substring(6, 10));
+
+			if (inpDate.length() > 10) {
+				int hh = Integer.parseInt(inpDate.substring(11, 13));
+				int mm = Integer.parseInt(inpDate.substring(14, 16));
+				int ss = Integer.parseInt(inpDate.substring(17, 19));
+
+				calendar.set(year, month - 1, day, hh, mm, ss);
+			} else {
+				calendar.set(year, month - 1, day, 0, 0, 0);
+			}
+		}
+		return new Date((calendar.getTimeInMillis() / 1000) * 1000);
+		// return calendar.getTime();
+	}
+
+	public static String numberFormat(int input) {
+		String output = "";
+		String remain = Integer.toString(input);
+		if (remain.length() > 3) {
+			for (int i = 0; i < remain.length() && remain.length() > 3; i++) {
+				int index = remain.length();
+				int position = index - 3;
+				String str1 = remain.substring(0, position);
+				output = "," + remain.substring(position, remain.length()) + output;
+				remain = str1;
+				if (remain.length() < 3)
+					output = remain + output;
+			}
+			return output;
+		}
+		return Integer.toString(input);
+	}
+
+	public static int cnvStringToIntNumber(String input) {
+		String outputStr = "0";
+		if ((input != null) && (input.length() > 0))
+			outputStr = replaceStrWithStr(input, ",", "");
+		return Integer.parseInt(outputStr);
+	}
+
+	public static String cnvDateToStringAD(java.util.Date inputDate, String targetFormat) throws Exception {
+		targetFormat = targetFormat.toUpperCase();
+		String retDate = "";
+		String hh = "";
+		String mm = "";
+		String ss = "";
+		if (inputDate != null) {
+			java.util.Calendar calendarObj = java.util.Calendar.getInstance(Locale.ENGLISH);
+			calendarObj.setTime(inputDate);
+
+			int day = calendarObj.get(java.util.Calendar.DAY_OF_MONTH);
+			int month = calendarObj.get(java.util.Calendar.MONTH) + 1;
+			int year = calendarObj.get(java.util.Calendar.YEAR);
+			int hours = calendarObj.get(java.util.Calendar.HOUR_OF_DAY);
+			int minutes = calendarObj.get(java.util.Calendar.MINUTE);
+			int seconds = calendarObj.get(java.util.Calendar.SECOND);
+
+			/*
+			 * Debug.println(" day = " + day + " month = " + month + " year = "
+			 * + year + "\n" + " hours = " + hours + " minutes = " + minutes +
+			 * " seconds = "+ seconds);
+			 */
+
+			if (day < 10)
+				retDate = "0" + day;
+			else
+				retDate = (new Integer(day)).toString();
+
+			if (month < 10) {
+				if (targetFormat.equals("YYYYMMDD")) {
+					retDate = year + "0" + month + retDate;
+				}
+				if (targetFormat.equals("DD/MM/YYYY")) {
+					retDate = retDate + "/0" + month + "/" + year;
+				}
+				if (targetFormat.equals("YYYY/MM/DD")) {
+					retDate = year + "/0" + month + "/" + retDate;
+				}
+				if (targetFormat.equals("MM/DD/YYYY")) {
+					retDate = "/0" + month + "/" + retDate + "/" + year;
+				}
+				if (targetFormat.equals("DD/MM/YYYY HH24:MI:SS") || targetFormat.equals("DD/MM/YYYY HH:MM:SS")) {
+					if (hours < 10)
+						hh = "0" + Integer.toString(hours);
+					else
+						hh = Integer.toString(hours);
+					if (minutes < 10)
+						mm = "0" + Integer.toString(minutes);
+					else
+						mm = Integer.toString(minutes);
+					if (seconds < 10)
+						ss = "0" + Integer.toString(seconds);
+					else
+						ss = Integer.toString(seconds);
+
+					retDate = retDate + "/0" + month + "/" + year + " " + hh + ":" + mm + ":" + ss;
+				}
+				if (targetFormat.equals("MMYYYY")) {
+					retDate =  String.format("%02d", month) + year;
+				}
+				if (targetFormat.equals("YYYYMM")) {
+					retDate = year + String.format("%02d", month);
+				}
+				if (targetFormat.equals("YYYY")) {
+					retDate =  ""+year;
+				}
+			} else {
+				if (targetFormat.equals("YYYYMMDD")) {
+					retDate = year + "" + month + "" + retDate;
+				}
+				if (targetFormat.equals("DD/MM/YYYY")) {
+					retDate = retDate + "/" + month + "/" + year;
+				}
+
+				if (targetFormat.equals("YYYY/MM/DD")) {
+					retDate = year + "/" + month + "/" + retDate;
+				}
+				if (targetFormat.equals("MM/DD/YYYY")) {
+					retDate = month + "/" + retDate + "/" + year;
+				}
+				if (targetFormat.equals("DD/MM/YYYY HH24:MI:SS") || targetFormat.equals("DD/MM/YYYY HH:MM:SS")) {
+					if (hours < 10)
+						hh = "0" + Integer.toString(hours);
+					else
+						hh = Integer.toString(hours);
+					if (minutes < 10)
+						mm = "0" + Integer.toString(minutes);
+					else
+						mm = Integer.toString(minutes);
+					if (seconds < 10)
+						ss = "0" + Integer.toString(seconds);
+					else
+						ss = Integer.toString(seconds);
+
+					retDate = retDate + "/" + month + "/" + year + " " + hh + ":" + mm + ":" + ss;
+				}
+				if (targetFormat.equals("MMYYYY")) {
+					retDate =  String.format("%02d", month) + year;
+				}
+				if (targetFormat.equals("YYYYMM")) {
+					retDate = year + String.format("%02d", month);
+				}
+				if (targetFormat.equals("YYYY")) {
+					retDate =  ""+year;
+				}
+			}
+		} else {
+			if (targetFormat.equals("DD/MM/YYYY")) {
+				retDate = "00/00/0000";
+			}
+			if (targetFormat.equals("YYYY/MM/DD")) {
+				retDate = "0000/00/00";
+			}
+			if (targetFormat.equals("DD/MM/YYYY HH24:MI:SS") || targetFormat.equals("DD/MM/YYYY HH:MM:SS")) {
+				retDate = "00/00/0000 00:00:00";
+			}
+		}
+		return retDate;
+	}
+
+	public static String getFileUrlPreview(String fullFileName) throws Exception {
+		JSONObject jsonObj = new JSONObject();
+		jsonObj.put("action", "PreviewFile");
+		jsonObj.put("fullFileName", fullFileName);
+		String encryptJson = new Crypto(AppUtil.getAppConfigByKey("PARAM_SECURE_KEY")).encryptBase64(jsonObj
+				.toString());
+		String url = getUrlFileServlet() + "?p=" + percentEncodeRfc3986(encryptJson);
+		return url;
+	}
+
+	public static String getFileUrlDownload(String fullFileName) throws Exception {
+		JSONObject jsonObj = new JSONObject();
+		jsonObj.put("action", "DownloadFile");
+		jsonObj.put("fullFileName", fullFileName);
+		String encryptJson = new Crypto(AppUtil.getAppConfigByKey("PARAM_SECURE_KEY")).encryptBase64(jsonObj
+				.toString());
+		String url = getUrlFileServlet() + "?p=" + percentEncodeRfc3986(encryptJson);
+		return url;
+	}
+
+	public static String getBlobUrlPreview(String blobUuid, Blob blob) throws Exception {
+		Object sessionBeanObj = JSFUtil.getFromSession("bkSessionBean");
+		if (sessionBeanObj != null) {
+			BKSessionBean bkSessionBean = (BKSessionBean) sessionBeanObj;
+			byte[] blobData = blob.getBytes(1, (int) blob.length());
+			bkSessionBean.getImageMap().put(blobUuid, blobData);
+			JSONObject jsonObj = new JSONObject();
+			jsonObj.put("action", "PreviewBlob");
+			jsonObj.put("blobUuid", blobUuid);
+			String encryptJson = new Crypto(AppUtil.getAppConfigByKey("PARAM_SECURE_KEY")).encryptBase64(jsonObj
+					.toString());
+			String url = getUrlFileServlet() + "?p=" + percentEncodeRfc3986(encryptJson);
+			return url;
+		}
+		return null;
+	}
+
+	public static String getBlobUrlPreview(String uuid, byte[] byteData) throws Exception {
+		Object sessionBeanObj = JSFUtil.getFromSession("bkSessionBean");
+		if (sessionBeanObj != null) {
+			BKSessionBean bkSessionBean = (BKSessionBean) sessionBeanObj;
+			bkSessionBean.getImageMap().put(uuid, byteData);
+			JSONObject jsonObj = new JSONObject();
+			jsonObj.put("action", "PreviewBlob");
+			jsonObj.put("blobUuid", uuid);
+			String encryptJson = new Crypto(AppUtil.getAppConfigByKey("PARAM_SECURE_KEY")).encryptBase64(jsonObj
+					.toString());
+			String url = getUrlFileServlet() + "?p=" + percentEncodeRfc3986(encryptJson);
+			return url;
+		}
+		return null;
+	}
+
+	public static String getBlobUrlDownload(String blobUuid, Blob blob) throws Exception {
+		Object sessionBeanObj = JSFUtil.getFromSession("bkSessionBean");
+		if (sessionBeanObj != null) {
+			BKSessionBean bkSessionBean = (BKSessionBean) sessionBeanObj;
+			byte[] blobData = blob.getBytes(1, (int) blob.length());
+			bkSessionBean.getImageMap().put(blobUuid, blobData);
+			JSONObject jsonObj = new JSONObject();
+			jsonObj.put("action", "DownloadBlob");
+			jsonObj.put("blobUuid", blobUuid);
+			String encryptJson = new Crypto(AppUtil.getAppConfigByKey("PARAM_SECURE_KEY")).encryptBase64(jsonObj
+					.toString());
+			String url = getUrlFileServlet() + "?p=" + percentEncodeRfc3986(encryptJson);
+			return url;
+		}
+		return null;
+	}
+
+	public static String percentEncodeRfc3986(String urlParam) throws Exception {
+		return URLEncoder.encode(urlParam, "UTF-8").replace("+", "%20").replace("*", "%2A").replace("%7E", "~");
+	}
+
+	private static String getUrlFileServlet() {
+		return JSFUtil.getWebsiteURL() + "/servlet/secured/FileServlet";
+	}
+
+	public static String getYearFormatThai(String year) {
+		if (AppUtil.ifBlank(year, "").trim().length() == 0)
+			return "";
+		year = year.replace('0', '๐');
+		year = year.replace('1', '๑');
+		year = year.replace('2', '๒');
+		year = year.replace('3', '๓');
+		year = year.replace('4', '๔');
+		year = year.replace('5', '๕');
+		year = year.replace('6', '๖');
+		year = year.replace('7', '๗');
+		year = year.replace('8', '๘');
+		year = year.replace('9', '๙');
+		return year;
+	}
+
+	public static int getThisYearLocalEn() throws Exception {
+		Calendar now = Calendar.getInstance(Locale.ENGLISH);
+		int year = now.get(Calendar.YEAR);
+		return year;
+	}
+
+	public static int getThisYearLocalTh() throws Exception {
+		Calendar now = Calendar.getInstance(new Locale("TH", "th"));
+		int year = now.get(Calendar.YEAR);
+		return year;
+	}
+
+	public static void writeFile(String fullFilePath, byte[] contents) throws Exception {
+		File destFile = new File(fullFilePath);
+		if (!destFile.getParentFile().exists()) {
+			destFile.getParentFile().mkdirs();
+		}
+		destFile.createNewFile();
+		FileOutputStream fos = new FileOutputStream(destFile);
+		BufferedOutputStream bos = new BufferedOutputStream(fos);
+		bos.write(contents);
+		bos.flush();
+		bos.close();
+	}
+
+	public static boolean isValidPhoneNumber(String interPrefix, String phoneNumber) throws Exception {
+		// "\\+(9[976]\\d|8[987530]\\d|6[987]\\d|5[90]\\d|42\\d|3[875]\\d|2[98654321]\\d|9[8543210]|8[6421]|6[6543210]|5[87654321]|4[987654310]|3[9643210]|2[70]|7|1)\\d{1,14}$"
+		String prefixRegEx = "\\+(9[976]\\d|8[987530]\\d|6[987]\\d|5[90]\\d|42\\d|3[875]\\d|2[98654321]\\d|9[8543210]|8[6421]|6[6543210]|5[87654321]|4[987654310]|3[9643210]|2[70]|7|1|)";
+		String phoneNoRegEx = "\\d{1,14}$";
+		Pattern p = null;
+		Matcher m = null;
+		if (AppUtil.isBlankOrNull(phoneNumber) || AppUtil.isBlankOrNull(interPrefix)) {
+			return false;
+		}
+		p = Pattern.compile(prefixRegEx);
+		m = p.matcher(interPrefix);
+		if (!m.matches()) {
+			return false;
+		}
+		log.debug("interPrefix====" + interPrefix);
+		if (!"+66".equalsIgnoreCase(interPrefix)) {
+			p = Pattern.compile(phoneNoRegEx);
+			m = p.matcher(phoneNumber);
+			return m.matches();
+		} else {
+			if (!phoneNumber.startsWith("0")) {
+				return false;
+			}
+			if (phoneNumber.trim().length() != 9 && phoneNumber.trim().length() != 10) {
+				return false;
+			}
+			p = Pattern.compile(phoneNoRegEx);
+			m = p.matcher(phoneNumber);
+			return m.matches();
+		}
+	}
+
+	public static String displayPhoneNumber(String interPrefix, String phoneNumber) throws Exception {
+		if (!AppUtil.isBlankOrNull(phoneNumber) && !AppUtil.isBlankOrNull(interPrefix)) {
+			if ("+66".equalsIgnoreCase(interPrefix)) {
+				return (interPrefix + (phoneNumber.startsWith("0") ? phoneNumber.replaceFirst("0", "(0)") : phoneNumber))
+						.trim();
+			} else if ("+39".equalsIgnoreCase(interPrefix)) {
+				return (interPrefix + (phoneNumber.startsWith("0") ? phoneNumber.replaceFirst("0", "(0)") : phoneNumber))
+						.trim();
+			} else {
+				return (interPrefix + (phoneNumber.startsWith("0") ? phoneNumber.replaceFirst("0", "(0)") : phoneNumber))
+						.trim();
+			}
+		} else {
+			return (AppUtil.ifBlank(interPrefix, "") + " " + AppUtil.ifBlank(phoneNumber, "")).trim();
+		}
+	}
+
+	public static Integer cnvStrToInteger(String strInteger) {
+		try {
+			if (!AppUtil.isBlankOrNull(strInteger)) {
+				return Integer.parseInt(strInteger.trim().replace(",", ""));
+			} else {
+				return null;
+			}
+		} catch (Exception ex) {
+			return null;
+		}
+	}
+
+	public static BigDecimal cnvStrToBigDecimal(String strBigDecimal, int scale, int roundingMode) {
+		try {
+			if (!AppUtil.isBlankOrNull(strBigDecimal)) {
+				BigDecimal result = new BigDecimal(strBigDecimal.trim().replace(",", ""));
+				return result.setScale(scale, roundingMode);
+			} else {
+				return null;
+			}
+		} catch (Exception ex) {
+			return null;
+		}
+	}
+
+	public static String cnvIntegerToStr(Integer input, boolean isComma) {
+		if (input != null) {
+			String pattern = "####";
+			if (isComma) {
+				pattern = "#,###";
+			}
+			DecimalFormat df = new DecimalFormat(pattern);
+			return df.format(input);
+		} else {
+			return null;
+		}
+	}
+
+	public static String cnvBigDecimalToStr(BigDecimal input, int fractional, boolean isComma) {
+		if (input != null) {
+			String pattern = "###0";
+			if (isComma) {
+				pattern = "#,##0";
+			}
+			for (int i = 0; i < fractional; i++) {
+				pattern += ((i == 0) ? ".0" : "0");
+			}
+			DecimalFormat df = new DecimalFormat(pattern);
+			return df.format(input);
+		} else {
+			return null;
+		}
+	}
+
+	public static String getRoman(int number) {
+
+		String riman[] = { "M", "XM", "CM", "D", "XD", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I" };
+		int arab[] = { 1000, 990, 900, 500, 490, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1 };
+		StringBuilder result = new StringBuilder();
+		int i = 0;
+		while (number > 0 || arab.length == (i - 1)) {
+			while ((number - arab[i]) >= 0) {
+				number -= arab[i];
+				result.append(riman[i]);
+			}
+			i++;
+		}
+		return result.toString();
+	}
+
+	public static String getDomainNameExWww(String url) throws Exception {
+		URI uri = new URI(url.toLowerCase());
+		String domain = uri.getHost();
+		return domain.startsWith("www.") ? domain.substring(4) : domain;
+	}
+
+	public static String strDateCertificate(Date fullDate, Integer date, Integer month, Integer year) throws Exception {
+		if (fullDate != null) {
+			return AppUtil.cnvDateToStringAD(fullDate, "dd/MM/yyyy");
+		} else {
+			String strDate;
+			if (date != null) {
+				strDate = date.toString();
+			} else {
+				strDate = "  ";
+			}
+			if ((strDate != null) && (month != null) && (year != null)) {
+				return strDate + "/" + month.intValue() + "/" + year;
+			} else {
+				return "";
+			}
+		}
+	}
+
+
+
+
+	
+	public static String strDateCertificateFormatMonth(Date fullDate, Integer date, Integer month, Integer year) throws Exception {
+		log.debug("fullDate "+fullDate);
+		log.debug("date "+date);
+		log.debug("month "+month);
+		log.debug("year "+year);
+		if (fullDate != null) {
+			//return DcaUtil.cnvDateToStringAD(fullDate, "MMMM d, yyyy");
+			return new SimpleDateFormat("MMMM    d, yyyy", new Locale("en", "en")).format(fullDate);
+		} else {
+			String strDate;
+			if (date != null) {
+				strDate = date.toString();
+			} else {
+				strDate = "  ";
+			}
+			if ((strDate != null) && (month != null) && (year != null)) {
+				//return strDate + "/" + month.intValue() + "/" + year;
+				return getDescMonthEn(month.intValue())+"   "+strDate+", "+year;
+			} else {
+				return "";
+			}
+		}
+	}
+
+	public static long daysBetween(Calendar startDate, Calendar endDate) {
+		Calendar date = (Calendar) startDate.clone();
+		long daysBetween = 0;
+		while (date.before(endDate)) {
+			date.add(Calendar.DAY_OF_MONTH, 1);
+			daysBetween++;
+		}
+		return daysBetween;
+	}
+
+	public static boolean hasErrorLevelMessage() {
+		FacesContext ctx = FacesContext.getCurrentInstance();
+		Iterator<FacesMessage> iterator = ctx.getMessages();
+		while (iterator.hasNext()) {
+			FacesMessage message = iterator.next();
+			if (message.getSeverity().equals(FacesMessage.SEVERITY_ERROR)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	public static boolean isStringNull(String value) {
+		if (value == null || value.trim().length() == 0 || value.trim().equals("null")) {
+			return true;
+		}
+		return false;
+	}
+	
+	public static String getDescMonthEn(int month){
+		switch (month){
+			case 1 : return "January";
+			case 2 : return "February";
+			case 3 : return "March";
+			case 4 : return "April";
+			case 5 : return "May";
+			case 6 : return "June";
+			case 7 : return "July";
+			case 8 : return "August";
+			case 9 : return "September";
+			case 10 : return "October";
+			case 11 : return "November";
+			case 12 : return "December";
+		}
+		return "";
+	}
+	
+	public static String cnvStrNumberToStrThaiNumber(String number) {
+		String results = "";
+		if (isInteger(number)) {
+			System.out.println("### Is Integer");
+			results += AppUtil.cnvNumberToThaiNumber(Integer.parseInt(number));
+		} else {
+			System.out.println("### Not Integer");
+			for (int i = 0; i < number.length(); i++) {
+				if (isInteger(String.valueOf(number.charAt(i)))) {
+					System.out.println(">>> " + number.charAt(i));
+					System.out.println(">>> " + Integer.parseInt(String.valueOf(number.charAt(i))));
+					results += AppUtil.cnvNumberToThaiNumber(Integer.parseInt(String.valueOf(number.charAt(i))));
+				} else {
+					results += number.charAt(i);
+				}
+			}
+		}
+		return results;
+	}
+	
+	public static String cnvNumberToThaiNumber(Integer input) {
+		if (input != null) {
+			NumberFormat nf = NumberFormat.getNumberInstance(new Locale("th", "TH", "TH"));
+			nf.setGroupingUsed(false);
+			return nf.format(input);
+		} else {
+			return null;
+		}
+	}
+	
+	public static boolean isInteger(String s) {
+	    return isInteger(s,10);
+	}
+
+	public static boolean isInteger(String s, int radix) {
+	    if(s.isEmpty()) return false;
+	    for(int i = 0; i < s.length(); i++) {
+	        if(i == 0 && s.charAt(i) == '-') {
+	            if(s.length() == 1) return false;
+	            else continue;
+	        }
+	        if(Character.digit(s.charAt(i),radix) < 0) return false;
+	    }
+	    return true;
+	}
+	
+	public static boolean containsWhiteSpace(final String testCode){
+	    if(testCode != null){
+	        for(int i = 0; i < testCode.length(); i++){
+	            if(Character.isWhitespace(testCode.charAt(i))){
+	                return true;
+	            }
+	        }
+	    }
+	    return false;
+	}
+	
+	public static String capitalizer(String word) {
+		String[] words = word.split(" ");
+		StringBuilder sb = new StringBuilder();
+		if (words[0].length() > 0) {
+			sb.append(Character.toUpperCase(words[0].charAt(0))
+					+ words[0].subSequence(1, words[0].length()).toString().toLowerCase());
+			for (int i = 1; i < words.length; i++) {
+				sb.append(" ");
+				if (words[i].length() > 0)
+					sb.append(Character.toUpperCase(words[i].charAt(0))
+							+ words[i].subSequence(1, words[i].length()).toString().toLowerCase());
+			}
+		}
+		return sb.toString();
+	}
+
+}

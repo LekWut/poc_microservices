@@ -1,0 +1,61 @@
+package base.facade;
+
+import java.io.Serializable;
+
+import base.spring.security.AppUser;
+import base.utils.AppUtil;
+
+public abstract class BaseFacade implements Serializable {
+	public void addInfoMessage(String msgCode) {
+		AppUtil.addMessage(msgCode, new String[] { "" }, "1");
+	}
+	
+	public void addInfoMessage(String msgCode, String msgParam) {
+		AppUtil.addMessage(msgCode, new String[] { msgParam }, "1");
+	}
+
+	public void addInfoMessage(String msgCode, String[] msgParams) {
+		AppUtil.addMessage(msgCode, msgParams, "1");
+	}
+	
+	public void addInfoMessageForComponent(String componentId, String msgCode) {
+		AppUtil.addMessageForComponent(componentId, msgCode, new String[] { "" }, "1");
+	}
+
+	public void addInfoMessageForComponent(String componentId, String msgCode, String[] msgParams) {
+		AppUtil.addMessageForComponent(componentId, msgCode, msgParams, "1");
+	}
+
+	public void addErrorMessage(String msgCode) {
+		AppUtil.addMessage(msgCode, new String[] { "" }, "2");
+	}
+	
+	public void addErrorMessage(String msgCode, String msgParam) {
+		AppUtil.addMessage(msgCode, new String[] { msgParam }, "2");
+	}
+
+	public void addErrorMessage(String msgCode, String[] msgParams) {
+		AppUtil.addMessage(msgCode, msgParams, "2");
+	}
+	
+	public void addErrorMessageForComponent(String componentId, String msgCode) {
+		AppUtil.addMessageForComponent(componentId, msgCode, new String[] { "" }, "2");
+	}
+
+	public void addErrorMessageForComponent(String componentId, String msgCode, String[] msgParams) {
+		AppUtil.addMessageForComponent(componentId, msgCode, msgParams, "2");
+	}
+
+	public AppUser getCurrentUser() {
+		return AppUtil.getCurrentUser();
+	}
+
+	protected void addRedirectInfoMessage(String msgCode) {
+		AppUtil.addRedirectInfoMessage(msgCode);
+	}
+
+	protected void addRedirectErrorMessage(String msgCode) {
+		AppUtil.addRedirectErrorMessage(msgCode);
+	}
+
+}

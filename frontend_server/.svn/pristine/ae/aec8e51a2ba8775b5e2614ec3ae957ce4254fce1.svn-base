@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" 
+	xmlns:f="http://xmlns.jcp.org/jsf/core" 
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets" 
+	xmlns:jsf="http://xmlns.jcp.org/jsf" 
+	xmlns:pt="http://xmlns.jcp.org/jsf/passthrough"
+	xmlns:composite="http://xmlns.jcp.org/jsf/composite" 
+	xmlns:mj="http://mojarra.dev.java.net/mojarra_ext"
+	xmlns:p="http://primefaces.org/ui">
+
+<ui:composition template="/WEB-INF/templates/template.xhtml">
+	<ui:define name="innerHeadTag">
+		<title>testSuspension.xhtml</title>
+		<style type="text/css">
+</style>
+	</ui:define>
+	<ui:define name="contentSection">
+		<h:form id="SuspensionTable">
+			<h:panelGrid style="width:80%;margin:0 auto;">
+				<p:commandButton action="#{bkTestSuspension.action_openSuspensionModal}" value="Add" update="suspensionModal" style="margin-top:10px;" />
+				<p:dataTable var="sp" 
+							 value="#{bkTestSuspension.suspensionList}" 
+							 rowKey="#{Suspension.id}">
+					<p:column headerText="Id">
+						<h:outputText value="#{sp.id}" />
+					</p:column>
+					<p:column headerText="Student Code">
+						<h:outputText value="#{sp.studentCode}" />
+					</p:column>
+					<p:column headerText="Student Name">
+						<h:outputText value="#{sp.studentName}" />
+					</p:column>
+					<p:column headerText="Suspension Remark">
+						<h:outputText value="#{sp.suspensionRemark}" />
+					</p:column>
+					<p:column headerText="Suspension Date">
+						<h:outputText value="#{sp.suspensionDate}">
+							<f:convertDateTime pattern="dd/MM/yyyy"/>
+						</h:outputText>
+					</p:column>
+					<p:column headerText="Suspensed">
+						<h:outputText value="#{sp.suspendedFlag}" />
+					</p:column>
+					<p:column headerText="Command">
+						<p:commandButton action="#{bkTestSuspension.action_openEditSuspensionModal(sp)}" 
+										 process="@form" value="Edit" update="suspensionModal" />
+						<p:commandButton action="#{bkTestSuspension.action_delete(sp)}" 
+										  value="Delete" update="@form" style="margin-left:5px;" />
+					</p:column>
+				</p:dataTable>
+			</h:panelGrid>
+		</h:form>
+		<p:dialog id="suspensionModal" header="Suspension" widgetVar="SuspensionWidgetVar" modal="true" 
+				  visible="#{bkTestSuspension.showModal}" closable="false">
+			<h:form>
+				<h:panelGrid columns="2" cellpadding="5">
+					<h:outputLabel for="studentCode" value="Student Code:" />
+					<p:inputText id="studentCode" value="#{bkTestSuspension.suspensionDto.studentCode}" />
+					<h:outputLabel for="studentName" value="Student Name:" />
+					<p:inputText id="studentName" value="#{bkTestSuspension.suspensionDto.studentName}" />
+					<h:outputLabel for="suspensionRemark" value="Suspension Remark:" />
+					<p:inputText id="suspensionRemark" value="#{bkTestSuspension.suspensionDto.suspensionRemark}" />
+					<h:outputLabel for="suspensionDate" value="Suspension Date:" />
+					<p:calendar id="suspensionDate" value="#{bkTestSuspension.suspensionDto.suspensionDate}" navigator="true" pattern="dd/MM/yyyy" />
+					<h:outputLabel for="suspendedFlag" value="suspensed Flag:" />
+					<p:selectBooleanCheckbox id="suspendedFlag" value="#{bkTestSuspension.suspensionDto.suspendedFlagBoolean}">
+					</p:selectBooleanCheckbox>
+					<h:panelGroup />
+					<h:panelGroup>
+						<p:commandButton action="#{bkTestSuspension.action_saveNewSuspension}" value="Save" update="suspensionModal,SuspensionTable" />
+						<p:commandButton action="#{bkTestSuspension.action_closeSuspensionModal}" value="Cancel" update="suspensionModal,SuspensionTable" style="margin-left:10px;"/>
+					</h:panelGroup>
+				</h:panelGrid>
+
+			</h:form>
+		</p:dialog>
+	</ui:define>
+</ui:composition>
+</html>
+

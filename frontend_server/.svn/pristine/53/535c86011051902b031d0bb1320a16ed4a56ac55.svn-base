@@ -1,0 +1,10 @@
+spring.application.name=frontend-server
+server.port=8080
+info.app.name=Frontend Server Application
+info.app.description=Frontend Server on spring boot application
+info.app.version=1.0.0
+#eureka.client.service-url.default-zone=http://localhost:8761/eureka
+
+###logging###
+logging.level.com.poc.frontend=DEBUG
+logging.level.base=DEBUG

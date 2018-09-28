@@ -1,0 +1,60 @@
+package com.poc.frontend.facade;
+
+import java.util.List;
+import java.util.Map;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import com.poc.frontend.backingbean.BKTestCheckgrade;
+import com.poc.frontend.dto.CheckgradeDto;
+import com.poc.frontend.dto.SuspensionDto;
+import com.poc.frontend.dto.UserDto;
+
+import base.facade.BaseFacade;
+
+@Service("testCheckgradeFacade")
+public class TestCheckgradeFacadeImpl extends BaseFacade implements TestCheckgradeFacade {
+	private static final long serialVersionUID = 1L;
+	private static final Logger log = LogManager.getLogger(TestCheckgradeFacadeImpl.class);
+	@Autowired
+	private RestTemplate restTemplate;
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public void checkgradeStudentCode(BKTestCheckgrade bkBean) throws Exception {
+		log.debug("::checkgradeStudentCode::"+bkBean.getStudentCode());
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON_UTF8);
+		headers.set("Authorization", getCurrentUser().getCurrentToken());
+		HttpEntity<Map<String, Object>> request = new HttpEntity<Map<String, Object>>(headers);
+		ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+				getApiGatewayHost() + "/checkgrade/testCheckgrade/checkgradestudent/"+bkBean.getStudentCode(),
+				HttpMethod.GET, request, 
+				new ParameterizedTypeReference<Map<String, Object>>() {
+				});
+		Map<String, Object> mapper = response.getBody();
+		if (mapper!=null) {
+			if ((Boolean)mapper.get("check")) {
+				bkBean.setCheckgradeList((List<CheckgradeDto>)mapper.get("result"));
+				bkBean.setSuspensionList(null);
+				log.debug("CheckgradeList==>"+bkBean.getCheckgradeList().size());
+			} else {
+				bkBean.setSuspensionList((List<SuspensionDto>)mapper.get("result"));
+				bkBean.setCheckgradeList(null);
+				log.debug("SuspensionList==>"+bkBean.getSuspensionList().size());
+			}
+		}
+	}
+	
+}
+

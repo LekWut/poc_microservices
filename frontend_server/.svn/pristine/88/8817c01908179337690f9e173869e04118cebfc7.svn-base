@@ -1,0 +1,154 @@
+package base.spring.security;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.naming.CommunicationException;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.stereotype.Service;
+//import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
+
+import com.poc.frontend.dto.UserDto;
+
+import base.utils.AppUtil;
+import base.utils.FacadeException;
+//import caat.stat.auth.dao.AuthMUserDao;
+//import caat.stat.auth.domain.AuthMUser;
+//import caat.stat.auth.domain.AuthMUserRole;
+
+@Service("commonDaoLdapAuthenticationProvider")
+public class CommonDaoLdapAuthenticationProvider implements AuthenticationProvider {
+	private static final Logger log = LogManager.getLogger(CommonDaoLdapAuthenticationProvider.class);
+//	@Autowired
+//	private AuthMUserDao authMUserDao;
+	@Autowired
+	private RestTemplate restTemplate;
+
+	///@Transactional(readOnly = true)
+	@Override
+	public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+		log.debug("authenticate");
+		try {
+			String username = authentication.getName();
+			String password = authentication.getCredentials().toString();
+			if (AppUtil.isBlankOrNull(username) && AppUtil.isBlankOrNull(password)) {
+				throw new AppAuthenticationException("error.login.usernameAndPassword.required");
+			} else if (AppUtil.isBlankOrNull(username)) {
+				throw new AppAuthenticationException("error.login.username.required");
+			} else if (AppUtil.isBlankOrNull(password)) {
+				throw new AppAuthenticationException("error.login.password.required");
+			}
+			if(false) {
+				LdapConnector.connectWithManager(username, password);//ต้องลบออก
+			}
+			//get token
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.APPLICATION_JSON_UTF8);
+			Map<String, String> mapper = new HashMap<>();
+			mapper.put("username", username);
+			mapper.put("password", password);
+			HttpEntity<Map<String, String>> request = new HttpEntity<Map<String, String>>(mapper, headers);
+			ResponseEntity<String> response = restTemplate.exchange(
+											"http://zuul-server/auth", 
+											HttpMethod.POST,
+											request, 
+											String.class);
+			HttpHeaders responseHeaders = response.getHeaders();
+			String token = (String)responseHeaders.get("Authorization").get(0);
+			log.debug("::username::"+username+"::token==>"+token);
+			//find user object
+			HttpHeaders headersUser = new HttpHeaders();
+			headersUser.setContentType(MediaType.APPLICATION_JSON_UTF8);
+			headersUser.set("Authorization", token);
+			HttpEntity<?> requestUser = new HttpEntity<>(headersUser);
+			ResponseEntity<UserDto> responseUser = restTemplate.exchange(
+					"http://zuul-server/admin/testUser/username/"+username, 
+					HttpMethod.GET,
+					requestUser, 
+					UserDto.class);
+			UserDto userDto = responseUser.getBody();
+			log.debug("::userDto::"+userDto.getName());
+			
+			Set<GrantedAuthority> setAuths = new HashSet<GrantedAuthority>();
+//			for (AuthMUserRole userRole : authMUser.getAuthMUserRoleList()) {
+				setAuths.add(new SimpleGrantedAuthority(userDto.getRole()));
+//			}
+			List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>(setAuths);
+			
+			AppUser user = new AppUser(userDto.getEmail(), userDto.getPassword(), true, true, true, true, authorities);
+			user.setAuthMUser(userDto);
+			user.setCurrentToken(token);
+			return new UsernamePasswordAuthenticationToken(user, user.getPassword(), user.getAuthorities());
+			
+			/*
+			AuthMUser authMUser = authMUserDao.findByLoginId(username);
+			if (authMUser == null) {
+				throw new AppAuthenticationException("error.login.user.notFound",
+						new String[] { username });
+			}
+			if ("I".equalsIgnoreCase(authMUser.getActiveStatus())) {
+				throw new AppAuthenticationException("error.login.user.notActive",
+						new String[] { username });
+			}
+			if ("true".equalsIgnoreCase(AppUtil.getAppConfigByKey("IS_LDAP_AUTHENTICATION"))
+					&& !authMUser.getDbAuthAsBoolean()) {
+				LdapConnector.connectWithManager(username, password);
+			} else {
+				PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+				if (!passwordEncoder.matches(password, authMUser.getPassword())) {
+					throw new AppAuthenticationException("error.login.password.incorrect");
+				}
+			}
+			Set<GrantedAuthority> setAuths = new HashSet<GrantedAuthority>();
+			for (AuthMUserRole userRole : authMUser.getAuthMUserRoleList()) {
+				setAuths.add(new SimpleGrantedAuthority(userRole.getRoleShortName().trim()));
+			}
+			List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>(setAuths);
+			
+			AppUser user = new AppUser(authMUser.getLoginId(), authMUser.getPassword(), true, true, true, true, authorities);
+			user.setAuthMUser(authMUser);
+			return new UsernamePasswordAuthenticationToken(user, user.getPassword(), user.getAuthorities());
+			return new UsernamePasswordAuthenticationToken(username, password, null);
+			*/
+			
+		} catch (AppAuthenticationException dcaEx) {
+			throw dcaEx;
+		} catch (FacadeException fcEx) {
+			throw new AppAuthenticationException(fcEx.getMessage());
+		} catch (CommunicationException comEx) {
+			throw new AppAuthenticationException("error.login.ldap.connection");
+		} catch (javax.naming.AuthenticationException ldapAuthEx) {
+			throw new AppAuthenticationException("error.login.ldap.authentication");
+		} catch (javax.naming.PartialResultException partialResultEx) {
+			throw new AppAuthenticationException("error.login.ldap.partialResult");
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new AppAuthenticationException(ex.toString());
+		}
+	}
+
+	@Override
+	public boolean supports(Class<?> authentication) {
+		return authentication.equals(UsernamePasswordAuthenticationToken.class);
+	}
+
+}

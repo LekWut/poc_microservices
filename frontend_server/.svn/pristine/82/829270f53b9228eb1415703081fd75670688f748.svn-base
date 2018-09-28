@@ -1,0 +1,68 @@
+package com.poc.frontend.facade;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import com.poc.frontend.backingbean.BKTestUser;
+import com.poc.frontend.dto.UserDto;
+
+import base.facade.BaseFacade;
+
+@Service("testUserFacade")
+public class TestUserFacadeImpl extends BaseFacade implements TestUserFacade {
+	private static final long serialVersionUID = 1L;
+	private static final Logger log = LogManager.getLogger(TestUserFacadeImpl.class);
+	@Autowired
+	private RestTemplate restTemplate;
+
+	@Override
+	public void initial(BKTestUser bkTestUser) throws Exception {
+		findAllTestUser(bkTestUser);
+	}
+
+	@Override
+	public void saveNewUser(BKTestUser bkTestUser) throws Exception {
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON_UTF8);
+		HttpEntity<UserDto> request = new HttpEntity<UserDto>(bkTestUser.getUserDto(), headers);
+		ResponseEntity<UserDto> response = restTemplate.postForEntity("http://auth-service/testUser/", request,
+				UserDto.class);
+		UserDto user = response.getBody();
+		log.debug("user.getEmail()=" + user.getEmail());
+	}
+
+	@Override
+	public void findAllUser(BKTestUser bkTestUser) throws Exception {
+		findAllTestUser(bkTestUser);
+	}
+
+	private void findAllTestUser(BKTestUser bkTestUser) throws Exception {
+		Iterable<Map> iterable = restTemplate.getForObject("http://auth-service/testUser/all", Iterable.class);
+		List<UserDto> result = new ArrayList<UserDto>();
+		Iterator<Map> itr = iterable.iterator();
+		while (itr.hasNext()) {
+			Map<String, Object> map = itr.next();
+			UserDto item = new UserDto();
+			item.setId(Long.valueOf(((Integer) map.get("id")).toString()));
+			item.setName((String) map.get("name"));
+			item.setEmail((String) map.get("email"));
+			item.setPassword((String) map.get("password"));
+			item.setRole((String) map.get("role"));
+			result.add(item);
+		}
+		bkTestUser.setUserList(result);
+	}
+
+}

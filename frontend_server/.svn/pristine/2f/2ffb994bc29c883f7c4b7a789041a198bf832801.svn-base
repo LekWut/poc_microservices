@@ -1,0 +1,27 @@
+body {
+	margin: 0px;
+	font-size: small !important;
+	font-family: Tahoma, arial, sans-serif !important;
+}
+
+/*Primefaces Theming*/
+.ui-widget,.ui-widget .ui-widget {
+	font-size: small !important;
+	font-family: Tahoma, arial, sans-serif !important;
+}
+
+#processingDialog_modal {
+	background: none !important;
+	cursor: progress;
+}
+
+#processingDialog {
+	background: none !important;
+	border: none !important;
+	box-shadow: none !important;
+}
+
+#processingDialog .ui-dialog-content.ui-widget-content {
+	background: none !important;
+	cursor: progress;
+}

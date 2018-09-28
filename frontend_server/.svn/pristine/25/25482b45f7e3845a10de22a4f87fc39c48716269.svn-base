@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<!-- Generated Mar 10, 2017 11:22:59 AM by Hibernate Tools 5.1.0.Final -->
+<hibernate-mapping>
+	<class name="base.test.domain.TestUser" table="TEST_USER">
+		<id name="username" type="string">
+			<column name="USERNAME" />
+			<generator class="assigned" />
+		</id>
+		<version name="version" type="int">
+			<column name="VERSION" not-null="true" />
+		</version>
+		<property name="password" type="string">
+			<column name="PASSWORD" not-null="true" />
+		</property>
+		<property name="userType" type="string">
+			<column name="USER_TYPE" />
+		</property>
+		<property name="userNameTh" type="string">
+			<column name="USER_NAME_TH" />
+		</property>
+		<property name="userNameEn" type="string">
+			<column name="USER_NAME_EN" />
+		</property>
+		<property name="email" type="string">
+			<column name="EMAIL" />
+		</property>
+		<property name="activeStaus" type="string">
+			<column name="ACTIVE_STAUS" />
+		</property>
+		<property name="createdBy" type="string">
+			<column name="CREATED_BY" not-null="true" />
+		</property>
+		<property name="createdDate" type="timestamp">
+			<column name="CREATED_DATE" not-null="true" />
+		</property>
+		<property name="updatedBy" type="string">
+			<column name="UPDATED_BY" />
+		</property>
+		<property name="updatedDate" type="timestamp">
+			<column name="UPDATED_DATE" />
+		</property>
+	</class>
+</hibernate-mapping>

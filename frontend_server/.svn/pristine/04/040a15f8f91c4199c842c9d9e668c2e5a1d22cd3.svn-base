@@ -1,0 +1,126 @@
+package com.poc.frontend.facade;
+
+import java.util.List;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import com.poc.frontend.backingbean.BKTestSuspension;
+import com.poc.frontend.dto.SuspensionDto;
+
+import base.facade.BaseFacade;
+
+@Service("testSuspensionFacade")
+public class TestSuspensionFacadeImpl extends BaseFacade implements TestSuspensionFacade {
+	private static final long serialVersionUID = 1L;
+	private static final Logger log = LogManager.getLogger(TestSuspensionFacadeImpl.class);
+	@Autowired
+	private RestTemplate restTemplate;
+
+	@Override
+	public void initial(BKTestSuspension bkBean) throws Exception {
+		findAllTestSuspension(bkBean);
+	}
+
+	@Override
+	public void saveNewSuspension(BKTestSuspension bkBean) throws Exception {
+		log.debug("::saveNewSuspension::");
+		/*
+		SuspensionDto responseUser = restTemplate.postForObject("http://suspension-service/testSuspension/",bkBean.getSuspensionDto(), SuspensionDto.class);
+		*/
+		
+		/*
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON_UTF8);
+		HttpEntity<SuspensionDto> request = new HttpEntity<SuspensionDto>(bkBean.getSuspensionDto(), headers);
+		ResponseEntity<SuspensionDto> response = restTemplate.postForEntity("http://suspension-service/testSuspension/", request,
+				SuspensionDto.class);
+		SuspensionDto responseUser = response.getBody();
+		*/
+		
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON_UTF8);
+		HttpEntity<SuspensionDto> request = new HttpEntity<SuspensionDto>(bkBean.getSuspensionDto(), headers);
+		ResponseEntity<SuspensionDto> response = restTemplate.exchange(
+										"http://suspension-service/testSuspension", 
+										HttpMethod.POST,
+										request, 
+										SuspensionDto.class);
+		SuspensionDto responseSuspension = response.getBody();
+
+		log.debug("responseUser.getId()=" + responseSuspension.getId());
+	}
+
+	@Override
+	public void findAllSuspension(BKTestSuspension bkBean) throws Exception {
+		findAllTestSuspension(bkBean);
+	}
+
+	private void findAllTestSuspension(BKTestSuspension bkBean) throws Exception {
+		/*
+		ResponseEntity<Iterable<SuspensionDto>> response = restTemplate.exchange("http://suspension-service/testSuspension/all",
+				HttpMethod.GET, null, new ParameterizedTypeReference<Iterable<SuspensionDto>>() {
+				});
+		Iterable<SuspensionDto> iterable = response.getBody();
+		List<SuspensionDto> tempList = new ArrayList<SuspensionDto>();
+		iterable.iterator().forEachRemaining(tempList::add);
+		bkBean.setUserList(tempList);
+		*/
+		
+		ResponseEntity<List<SuspensionDto>> response = restTemplate.exchange(
+							"http://suspension-service/testSuspension/all",
+							HttpMethod.GET, null, 
+							new ParameterizedTypeReference<List<SuspensionDto>>() {
+							});
+		List<SuspensionDto> resultList = response.getBody();
+		bkBean.setSuspensionList(resultList);
+
+		for (SuspensionDto suspension : bkBean.getSuspensionList()) {
+			log.debug("user.getId()=" + suspension.getId());
+		}
+	}
+
+	@Override
+	public void deleteSuspension(BKTestSuspension bkBean) throws Exception {
+		/*
+		restTemplate.delete("http://suspension-service/testSuspension/" + bkBean.getSuspensionDto().getId());
+		*/
+		
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON_UTF8);
+		HttpEntity<String> request = new HttpEntity<String>(headers);
+		ResponseEntity<String> response = restTemplate.exchange(
+				"http://suspension-service/testSuspension/" + bkBean.getSuspensionDto().getId(), HttpMethod.DELETE, request, String.class);
+		String responseBody = response.getBody();	
+		log.debug("responseBody=" + responseBody);
+	}
+
+	@Override
+	public void updateSuspension(BKTestSuspension bkBean) throws Exception {
+		/*
+		restTemplate.put("http://suspension-service/testSuspension/" + bkBean.getSuspensionDto().getId(), bkBean.getSuspensionDto());
+		*/
+		
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON_UTF8);
+		HttpEntity<SuspensionDto> request = new HttpEntity<SuspensionDto>(bkBean.getSuspensionDto(), headers);
+		ResponseEntity<SuspensionDto> response = restTemplate.exchange(
+				"http://suspension-service/testSuspension/" + bkBean.getSuspensionDto().getId(), 
+				HttpMethod.PUT, 
+				request,
+				SuspensionDto.class);
+		SuspensionDto responseUser = response.getBody();	
+		log.debug("responseUser.getId()=" + responseUser.getId());
+		
+	}
+	
+}

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"  
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:h="http://xmlns.jcp.org/jsf/html" 
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:jsf="http://xmlns.jcp.org/jsf"
+	xmlns:pt="http://xmlns.jcp.org/jsf/passthrough"
+	xmlns:composite="http://xmlns.jcp.org/jsf/composite"
+	xmlns:mj="http://mojarra.dev.java.net/mojarra_ext"
+	xmlns:p="http://primefaces.org/ui">
+	
+<ui:composition>
+	<h:form id="globalConfirmDialogForm">
+		<p:confirmDialog id="globalConfirmDialog" global="true" closable="false" showEffect="fade" hideEffect="fade">
+			<p:commandButton onclick="showLoading();" value="#{appLabel['base.yes']}" type="button"
+				styleClass="ui-confirmdialog-yes" icon="ui-icon-check" />
+			<p:commandButton value="#{appLabel['base.no']}" type="button" styleClass="ui-confirmdialog-no" icon="ui-icon-close" />
+		</p:confirmDialog>
+	</h:form>
+	<p:dialog id="globalMessageDialog" header="#{bkRequestBean.messagePopupTitle}" widgetVar="globalMessageDialog" 
+		showEffect="" hideEffect="" resizable="false" style="max-width:600px;min-width:300px;">
+		<h:panelGroup id="globalMessagePanel" layout="block">
+			<h:messages globalOnly="true" errorStyle="color:red;" infoStyle="color:green;" style="max-height:400px;overflow-y: auto;"
+				styleClass="#{bkRequestBean.jsfGlobalMessagesSize()==1?'globalMessageIsOne':''}" />
+			<h:form>
+				<h:panelGroup layout="block" style="text-align:center;">
+					<p:commandButton value="#{appLabel['base.close']}" onclick=" PF('globalMessageDialog').hide();return false;" />
+				</h:panelGroup>
+			</h:form>
+		</h:panelGroup>
+	</p:dialog>
+	<p:dialog id="processingDialog" widgetVar="processingDialog" modal="true" resizable="false" draggable="false" showHeader="false">
+		<h:panelGroup layout="block"
+			style="background-image: url(#{facesContext.externalContext.requestContextPath}/resources/images/blue_loading.gif); width: 100px; height: 100px;">
+		</h:panelGroup>
+	</p:dialog>
+	<h:panelGroup id="autoRenderGlobalPanel" style="display:none;">
+		<script type="text/javascript">
+			function showLoading(){
+				PF('processingDialog').show();
+			}
+			function hideLoading(){
+				PF('processingDialog').hide();
+			}
+			$( document ).ready(function() {			
+				if(#{bkRequestBean.hasGlobalMessages} == true){
+					var messagePopupTitle = '#{bkRequestBean.messagePopupTitle}';
+					$('#globalMessageDialog_title').text(messagePopupTitle);
+					PF('globalMessageDialog').show();
+					hideLoading();
+				}else{
+					PF('globalMessageDialog').hide();
+					hideLoading();
+				}
+			});
+		</script>
+	</h:panelGroup>
+</ui:composition>
+</html>

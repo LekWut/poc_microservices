@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:f="http://xmlns.jcp.org/jsf/core" xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets" xmlns:jsf="http://xmlns.jcp.org/jsf" xmlns:pt="http://xmlns.jcp.org/jsf/passthrough"
+	xmlns:composite="http://xmlns.jcp.org/jsf/composite" xmlns:mj="http://mojarra.dev.java.net/mojarra_ext"
+	xmlns:p="http://primefaces.org/ui">
+
+<ui:composition template="/WEB-INF/templates/template.xhtml">
+	<ui:define name="innerHeadTag">
+		<title>securityTesting.xhtml</title>
+		<style type="text/css">
+.col {
+	text-align: right;
+}
+
+.col2 {
+	text-align: left;
+}
+</style>
+	</ui:define>
+	<ui:define name="contentSection">
+		<p:tabView dynamic="true">
+			<p:tab title="SQL injection (SQLI)">
+				<h:panelGroup>
+					<h:form id="sqlInjectionForm">
+						<h:panelGrid columns="3">
+							<p:outputLabel value="Username:" />
+							<p:spacer width="10" />
+							<p:inputText value="#{bkSecurityTesting.username}" style="width:170px;" />
+							<p:outputLabel value="User type:" />
+							<p:spacer width="10" />
+							<p:column>
+								<p:selectOneMenu value="#{bkSecurityTesting.userType}" style="width:178px;">
+									<f:selectItem itemLabel="P" itemValue="P" />
+									<f:selectItem itemLabel="C" itemValue="C" />
+									<f:selectItem itemLabel="O" itemValue="O" />
+								</p:selectOneMenu>
+							</p:column>
+							<p:column />
+							<p:column />
+							<p:column>
+								<p:commandButton value="SQLi" action="#{bkSecurityTesting.action_sqlInjection()}" update="userDataTable"></p:commandButton>
+								<p:spacer width="10" />
+								<p:commandButton value="Prevent SQLi" action="#{bkSecurityTesting.action_preventSqlInjection()}" update="userDataTable"></p:commandButton>
+							</p:column>
+						</h:panelGrid>
+						<h:panelGroup layout="block" style="width:300px;margin-top:20px;">
+							<p:dataTable id="userDataTable" value="#{bkSecurityTesting.userList}" var="user">
+								<p:column headerText="Username" width="100px">
+									<h:outputText value="#{user.username}" />
+								</p:column>
+								<p:column headerText="User Type" width="100px">
+									<h:outputText value="#{user.userType}" />
+								</p:column>
+							</p:dataTable>
+						</h:panelGroup>
+					</h:form>
+				</h:panelGroup>
+			</p:tab>
+			<p:tab title="Cross-site scripting (XSS)">
+				<h:panelGroup>
+					<h:form id="xssForm">
+						<h:panelGrid columns="3" columnClasses="col,col,col2">
+							<p:outputLabel value="Input text:" />
+							<p:spacer width="10" />
+							<p:inputTextarea value="#{bkSecurityTesting.text}" style="width:165px;" />
+							<p:outputLabel value="Test text:" />
+							<p:spacer width="10" />
+							<h:outputText value="#{bkSecurityTesting.sampleText}" />
+							<p:column />
+							<p:column />
+							<p:column>
+								<p:commandButton value="XSS" update="xss"></p:commandButton>
+								<p:spacer width="10" />
+								<p:commandButton value="prevent XSS" update="preventXss"></p:commandButton>
+							</p:column>
+							<p:outputLabel value="XSS:" />
+							<p:spacer width="10" />
+							<h:outputText id="xss" value="#{bkSecurityTesting.text}" escape="false" />
+							<p:outputLabel value="Prevent XSS:" />
+							<p:spacer width="10" />
+							<h:outputText id="preventXss" value="#{bkSecurityTesting.text}" />
+						</h:panelGrid>
+					</h:form>
+				</h:panelGroup>
+			</p:tab>
+		</p:tabView>
+	</ui:define>
+</ui:composition>
+</html>
+

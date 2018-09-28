@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:f="http://xmlns.jcp.org/jsf/core" xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets" xmlns:jsf="http://xmlns.jcp.org/jsf" xmlns:pt="http://xmlns.jcp.org/jsf/passthrough"
+	xmlns:composite="http://xmlns.jcp.org/jsf/composite" xmlns:mj="http://mojarra.dev.java.net/mojarra_ext"
+	xmlns:p="http://primefaces.org/ui">
+
+	<ui:composition template="/WEB-INF/templates/publicTemplate.xhtml">
+		<ui:define name="innerHeadTag">
+			<title>testMenu.xhtml</title>
+		</ui:define>
+		<ui:define name="contentSection">
+			<h:form id="mainMenuForm">
+				<p:tabMenu id="tabMenu" activeIndex="#{bkMenuBean.activeMainMenuIndex}" model="#{bkMenuBean.mainMenuModel}" />
+			</h:form>
+			<h:form id="sideMenuForm">
+				<p:panelMenu style="max-width:400px" model="#{bkMenuBean.sideMenuModel}" />
+			</h:form>
+		</ui:define>
+	</ui:composition>
+</html>
+
